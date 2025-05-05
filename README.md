@@ -65,14 +65,121 @@ Export.image.toDrive({...});
 ```
 
 ### 🔹 Step 2 to 7: R Processing and Visualization (Summary)
-```r
-library(tidyverse); library(sf); library(terra); library(biscale)
-pakistan <- st_read("Pakistan_with_Kashmir.shp")
-# Process rasters, create bivariate classes, plot using ggplot2 and cowplot
-ggsave("pakistan_climate_map.png", final_map, width = 10, height = 8, dpi = 300)
+Creating a Bivariate Climate Map of Pakistan using GEE and R : A Step-by-Step Guide
+Climate change is reshaping Pakistan's environment in profound ways. In this tutorial, I'll walk through how I created a bivariate map showing temperature and precipitation patterns across Pakistan from 1980–2024 using Google Earth Engine and R.
+Bivariate Climate Map of Pakistan:Creating a Bivariate Climate Map of Pakistan: A Step-by-Step Guide
+Climate change is reshaping Pakistan's environment in profound ways. In this tutorial, I'll walk through how I created a bivariate map showing temperature and precipitation patterns across Pakistan from 1990–2023 using Google Earth Engine and R.
+Step 1: Data Extraction from Google Earth Engine
+First, we need to extract our climate data using Google Earth Engine's JavaScript API:
+```javascript
+// Define time range
+var startDate = ee.Date('1990–01–01');
+var endDate = ee.Date('2023–12–01');
+// Load ERA5 dataset
+var era5 = ee.ImageCollection("ECMWF/ERA5/DAILY")
+ .filterDate(startDate, endDate)
+ .filterBounds(pakistan);
+// Calculate mean temperature (converting Kelvin to Celsius)
+var dailyMean = era5.map(function(img) {
+ var tavg = img.select('minimum_2m_air_temperature')
+ .add(img.select('maximum_2m_air_temperature'))
+ .divide(2)
+ .subtract(273.15)
+ .rename('daily_mean_temp');
+ return tavg.copyProperties(img, ['system:time_start']);
+});
+// Calculate precipitation (converting meters to mm)
+var dailyPrecip = era5.select('total_precipitation')
+ .map(function(img) {
+ return img.multiply(1000)
+ .rename('precip_mm_day');
+ });
+// Export the processed data
+Export.image.toDrive({
+ image: dailyMean.mean().rename('temp'),
+ description: 'mean_temp_1990_2023',
+ fileNamePrefix: 'mean_temp_1990_2023',
+ region: pakistan.geometry(),
+ scale: 27830,
+ crs: 'EPSG:4326'
+});
+Export.image.toDrive({
+ image: dailyPrecip.mean().rename('ppt'),
+ description: 'mean_precip_1990_2023',
+ fileNamePrefix: 'mean_precip_1990_2023',
+ region: pakistan.geometry(),
+ scale: 27830,
+ crs: 'EPSG:4326'
+});
 ```
-
----
+ Step 2: Setting Up the R Environment
+With our data downloaded, we'll use R for processing and visualization:
+```r
+# Load required packages
+library(tidyverse)
+library(sf) # For spatial data handling
+library(terra) # Raster processing
+library(biscale) # Bivariate mapping
+library(cowplot) # Plot arrangement
+library(extrafont) # For font management
+# Import Pakistan boundary shapefile
+pakistan <- st_read("Pakistan_with_Kashmir.shp")
+```
+## Step 3: Processing Temperature Data
+```r
+# Load and resample temperature raster
+temp_original <- rast("mean_temp_1990_2023.tif")
+target_res <- rast(ext(temp_original), resolution = 0.025) # ~2.5km resolution
+temp_resampled <- resample(temp_original, target_res)
+# Crop to Pakistan boundaries
+temp_cropped <- crop(temp_resampled, pakistan, mask = TRUE)
+```
+## Step 4: Processing Precipitation Data
+```r
+# Repeat for precipitation data
+ppt_original <- rast("mean_precip_1990_2023.tif")
+ppt_resampled <- resample(ppt_original, target_res)
+ppt_cropped <- crop(ppt_resampled, pakistan, mask = TRUE)
+```
+## Step 5: Creating Bivariate Classes
+```r
+# Combine into a data frame
+climate_data <- c(temp_cropped, ppt_cropped) |>
+ as.data.frame(xy = TRUE) |>
+ na.omit()
+# Create bivariate classes
+climate_data <- bi_class(climate_data,
+ x = mean_temp_1990_2023, 
+ y = mean_precip_1990_2023,
+ style = "quantile", 
+ dim = 4) # 4x4 classes
+```
+## Step 6: Building the Map
+```r
+# Base map
+main_map <- ggplot() +
+ geom_raster(data = climate_data, 
+ aes(x = x, y = y, fill = bi_class)) +
+ bi_scale_fill(pal = "BlueOr", dim = 4) +
+ geom_sf(data = pakistan, fill = NA, color = "black", linewidth = 0.7) +
+ labs(title = "Pakistan: Temperature and Precipitation Patterns (1990–2023)",
+ caption = "Source: ERA5 Climate Data | Author: Your Name") +
+ theme_void() +
+ theme(plot.title = element_text(hjust = 0.5, face = "bold"))
+# Create legend
+bivar_legend <- bi_legend(pal = "BlueOr",
+ dim = 4,
+ xlab = "Temperature (°C)",
+ ylab = "Precipitation (mm)")
+# Combine map and legend
+final_map <- ggdraw() +
+ draw_plot(main_map, 0, 0, 1, 1) +
+ draw_plot(bivar_legend, 0.65, 0.1, 0.3, 0.3)
+```
+## Step 7: Exporting the Final Visualization
+```r
+ggsave("pakistan_climate_map.png", final_map, 
+ width = 10, height = 8, dpi = 300)
 
 ## 📊 Key Findings from the Visualization
 
@@ -91,17 +198,6 @@ ggsave("pakistan_climate_map.png", final_map, width = 10, height = 8, dpi = 300)
 
 ---
 
-## 📁 Repository Structure
-
-```
-├── data/               # Downloaded and processed datasets  
-├── scripts/            # R and GEE scripts  
-├── outputs/            # Final maps and visualizations  
-├── Dockerfile / renv   # Reproducible environment  
-└── README.md           # Project documentation  
-```
-
----
 
 ## 💾 Installation
 
