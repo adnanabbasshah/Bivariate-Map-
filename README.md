@@ -1,8 +1,9 @@
 
-# 🌦️ Pakistan Climate Bivariate Mapping Toolkit
+# 🌦️ Pakistan Climate Bivariate Mapping 
 
-![Bivariate Map](<img width="637" alt="bivaerate map1" src="https://github.com/user-attachments/assets/05f329dc-7d4a-414c-8e46-87c1826847ca" />
-)
+
+![Bivariate Map](<img width="637" alt="bivaerate map1" src="https://github.com/user-attachments/assets/579beaf9-c776-48ae-8b93-2c13a1430f09" />)
+
 
 ## A Complete Workflow for Analyzing and Visualizing Temperature-Precipitation Relationships Across Pakistan (1990–2023)
 
@@ -66,54 +67,7 @@ Export.image.toDrive({...});
 ```
 
 ### 🔹 Step 2 to 7: R Processing and Visualization (Summary)
-Creating a Bivariate Climate Map of Pakistan using GEE and R : A Step-by-Step Guide
-Climate change is reshaping Pakistan's environment in profound ways. In this tutorial, I'll walk through how I created a bivariate map showing temperature and precipitation patterns across Pakistan from 1980–2024 using Google Earth Engine and R.
-Bivariate Climate Map of Pakistan:Creating a Bivariate Climate Map of Pakistan: A Step-by-Step Guide
-Climate change is reshaping Pakistan's environment in profound ways. In this tutorial, I'll walk through how I created a bivariate map showing temperature and precipitation patterns across Pakistan from 1990–2023 using Google Earth Engine and R.
-Step 1: Data Extraction from Google Earth Engine
-First, we need to extract our climate data using Google Earth Engine's JavaScript API:
-```javascript
-// Define time range
-var startDate = ee.Date('1990–01–01');
-var endDate = ee.Date('2023–12–01');
-// Load ERA5 dataset
-var era5 = ee.ImageCollection("ECMWF/ERA5/DAILY")
- .filterDate(startDate, endDate)
- .filterBounds(pakistan);
-// Calculate mean temperature (converting Kelvin to Celsius)
-var dailyMean = era5.map(function(img) {
- var tavg = img.select('minimum_2m_air_temperature')
- .add(img.select('maximum_2m_air_temperature'))
- .divide(2)
- .subtract(273.15)
- .rename('daily_mean_temp');
- return tavg.copyProperties(img, ['system:time_start']);
-});
-// Calculate precipitation (converting meters to mm)
-var dailyPrecip = era5.select('total_precipitation')
- .map(function(img) {
- return img.multiply(1000)
- .rename('precip_mm_day');
- });
-// Export the processed data
-Export.image.toDrive({
- image: dailyMean.mean().rename('temp'),
- description: 'mean_temp_1990_2023',
- fileNamePrefix: 'mean_temp_1990_2023',
- region: pakistan.geometry(),
- scale: 27830,
- crs: 'EPSG:4326'
-});
-Export.image.toDrive({
- image: dailyPrecip.mean().rename('ppt'),
- description: 'mean_precip_1990_2023',
- fileNamePrefix: 'mean_precip_1990_2023',
- region: pakistan.geometry(),
- scale: 27830,
- crs: 'EPSG:4326'
-});
-```
- Step 2: Setting Up the R Environment
+
 With our data downloaded, we'll use R for processing and visualization:
 ```r
 # Load required packages
