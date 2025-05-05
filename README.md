@@ -1,7 +1,8 @@
 
 # 🌦️ Pakistan Climate Bivariate Mapping Toolkit
 
-![Bivariate Map](bivaerate_map1.png)
+![Bivariate Map](<img width="637" alt="bivaerate map1" src="https://github.com/user-attachments/assets/05f329dc-7d4a-414c-8e46-87c1826847ca" />
+)
 
 ## A Complete Workflow for Analyzing and Visualizing Temperature-Precipitation Relationships Across Pakistan (1990–2023)
 
