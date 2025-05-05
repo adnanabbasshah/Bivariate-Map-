@@ -136,6 +136,8 @@ final_map <- ggdraw() +
 ggsave("pakistan_climate_map.png", final_map, 
  width = 10, height = 8, dpi = 300)
 
+<img width="637" alt="bivaerate map1" src="https://github.com/user-attachments/assets/3f4cba6a-2d7c-4dbf-a6bd-615b134c7d0f" />
+
 ## 📊 Key Findings from the Visualization
 
 1. **Extreme Arid Zones**: Hot & dry Balochistan regions  
